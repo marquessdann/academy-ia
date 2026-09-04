@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,15 @@ class Settings(BaseSettings):
 
     # Banco de dados
     database_url: str = "sqlite:///./gymflow.db"
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_postgres_scheme(cls, value: str) -> str:
+        # Serviços como Render/Heroku fornecem a URL como "postgres://", mas
+        # o SQLAlchemy exige o esquema "postgresql://".
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql://", 1)
+        return value
 
     # JWT
     secret_key: str = "insecure-dev-key-change-me"
