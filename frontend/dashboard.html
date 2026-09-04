@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow AI — Painel do aluno</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="logo">GF</span> GymFlow AI</div>
+
+      <button class="nav-link active" data-view="classes">📅 Aulas disponíveis</button>
+      <button class="nav-link" data-view="bookings">🎟️ Minhas reservas</button>
+      <button class="nav-link" data-view="chat">💬 Assistente IA</button>
+
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="avatar" id="user-avatar">--</div>
+          <div>
+            <div class="name" id="user-name">Carregando...</div>
+            <div class="role" id="user-role">-</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-block btn-sm" id="logout-btn">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- Aulas disponíveis -->
+      <section id="view-classes">
+        <div class="topbar">
+          <div>
+            <h1>Aulas disponíveis</h1>
+            <p>Escolha uma modalidade e reserve sua vaga.</p>
+          </div>
+        </div>
+
+        <div class="filters">
+          <select id="filter-category">
+            <option value="">Todas as modalidades</option>
+          </select>
+        </div>
+
+        <div id="classes-container" class="class-grid">
+          <div class="loading">Carregando aulas...</div>
+        </div>
+      </section>
+
+      <!-- Minhas reservas -->
+      <section id="view-bookings" class="hidden">
+        <div class="topbar">
+          <div>
+            <h1>Minhas reservas</h1>
+            <p>Suas próximas aulas e o histórico de reservas.</p>
+          </div>
+        </div>
+        <div id="bookings-container" class="list">
+          <div class="loading">Carregando reservas...</div>
+        </div>
+      </section>
+
+      <!-- Chat IA -->
+      <section id="view-chat" class="hidden">
+        <div class="topbar">
+          <div>
+            <h1>Assistente GymFlow</h1>
+            <p>Pergunte sobre vagas, horários e suas reservas — as respostas usam dados reais da academia.</p>
+          </div>
+        </div>
+
+        <div class="chat-shell">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-suggestions">
+            <button class="chip" data-suggestion="Quais aulas têm vaga amanhã à noite?">Vagas amanhã à noite</button>
+            <button class="chip" data-suggestion="Qual horário costuma estar mais vazio?">Horário mais vazio</button>
+            <button class="chip" data-suggestion="Quais são minhas próximas aulas?">Minhas próximas aulas</button>
+            <button class="chip" data-suggestion="Qual o melhor horário para eu treinar?">Melhor horário pra mim</button>
+          </div>
+          <form class="chat-input-row" id="chat-form">
+            <input type="text" id="chat-input" placeholder="Escreva sua pergunta..." autocomplete="off" />
+            <button type="submit" class="btn btn-primary">Enviar</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

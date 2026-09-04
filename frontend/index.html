@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow AI — Entrar</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>
+        <span class="tag">⚡ Assistente de IA integrado</span>
+        <h1>Agende seus treinos sem fricção.</h1>
+        <p>
+          GymFlow AI é a plataforma de agendamento da sua academia: veja vagas em
+          tempo real, reserve aulas em segundos e pergunte à IA qual o melhor
+          horário para treinar.
+        </p>
+      </div>
+      <div class="feature-list">
+        <div class="item"><span class="dot"></span> Controle automático de vagas e reservas duplicadas</div>
+        <div class="item"><span class="dot"></span> Assistente de IA consulta dados reais da academia</div>
+        <div class="item"><span class="dot"></span> Recomendação inteligente dos horários mais vazios</div>
+        <div class="item"><span class="dot"></span> Área administrativa completa para gestão das aulas</div>
+      </div>
+    </div>
+
+    <div class="auth-form-side">
+      <div class="auth-card">
+        <div class="brand">
+          <span class="logo">GF</span>
+          GymFlow AI
+        </div>
+
+        <div class="role-toggle">
+          <button type="button" id="tab-login" class="active">Entrar</button>
+          <button type="button" id="tab-register">Criar conta</button>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <form id="login-form">
+          <h2>Bem-vindo de volta</h2>
+          <p class="subtitle">Entre com suas credenciais para acessar sua agenda.</p>
+          <div class="field">
+            <label for="login-email">E-mail</label>
+            <input type="email" id="login-email" required placeholder="voce@email.com" />
+          </div>
+          <div class="field">
+            <label for="login-password">Senha</label>
+            <input type="password" id="login-password" required placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+          <p class="form-footer">
+            Quer testar rápido? admin@gymflow.com / admin123 (admin)<br />
+            ou ana.paula@example.com / aluno123 (aluno)
+          </p>
+        </form>
+
+        <form id="register-form" class="hidden">
+          <h2>Criar sua conta</h2>
+          <p class="subtitle">Cadastre-se como aluno para começar a reservar aulas.</p>
+          <div class="field">
+            <label for="register-name">Nome completo</label>
+            <input type="text" id="register-name" required placeholder="Seu nome" />
+          </div>
+          <div class="field">
+            <label for="register-email">E-mail</label>
+            <input type="email" id="register-email" required placeholder="voce@email.com" />
+          </div>
+          <div class="field">
+            <label for="register-password">Senha</label>
+            <input type="password" id="register-password" required minlength="6" placeholder="Mínimo 6 caracteres" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Criar conta</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
