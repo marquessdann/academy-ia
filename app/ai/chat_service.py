@@ -238,12 +238,19 @@ def _format_classes(classes: list[dict]) -> str:
     return "Aulas encontradas:\n" + "\n".join(lines)
 
 
+BOOKING_STATUS_LABELS = {
+    "confirmed": "✅ Confirmada",
+    "cancelled": "❌ Cancelada",
+}
+
+
 def _format_bookings(bookings: list[dict], history: bool) -> str:
     if not bookings:
         return "Você não possui reservas históricas." if history else "Você não tem próximas aulas reservadas para esse filtro."
     header = "Seu histórico de reservas:" if history else "Suas próximas aulas:"
     lines = [
-        f"- {b['class_title']} ({b['category']}) em {b['start_time'][:16].replace('T', ' ')} — status: {b['status']}"
+        f"- {b['class_title']} ({b['category']}) em {b['start_time'][:16].replace('T', ' ')} "
+        f"— {BOOKING_STATUS_LABELS.get(b['status'], b['status'])}"
         for b in bookings[:10]
     ]
     return header + "\n" + "\n".join(lines)
