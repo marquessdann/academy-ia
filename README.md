@@ -92,7 +92,7 @@ Isso é configurado por `AI_PROVIDER` no `.env`:
 - `AI_PROVIDER=openai` → usa a API da OpenAI com a chave em
   `OPENAI_API_KEY` (padrão do modelo: `OPENAI_MODEL=gpt-4o-mini`).
 - `AI_PROVIDER=gemini` → usa a API do Google Gemini com a chave em
-  `GEMINI_API_KEY` (padrão do modelo: `GEMINI_MODEL=gemini-2.0-flash`),
+  `GEMINI_API_KEY` (padrão do modelo: `GEMINI_MODEL=gemini-3.6-flash`),
   que tem um nível gratuito generoso para testes. O Gemini expõe um
   endpoint compatível com a API da OpenAI, então `app/ai/client.py`
   reaproveita o mesmo SDK só trocando a `base_url` e a chave — o resto do
@@ -251,7 +251,7 @@ AI_PROVIDER=mock
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 
 # CORS (URLs do frontend separadas por vírgula)
 CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
