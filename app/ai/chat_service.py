@@ -3,9 +3,11 @@ mecanismo mock) e executa as "tools" que consultam dados reais do sistema.
 """
 
 import json
+import logging
 import unicodedata
 from datetime import datetime
 
+from openai import APIError
 from sqlalchemy.orm import Session
 
 from app.ai.client import get_llm_client
@@ -14,6 +16,8 @@ from app.models.category import Category
 from app.models.instructor import Instructor
 from app.models.user import User
 from app.schemas.ai import ChatResponse
+
+logger = logging.getLogger("gymflow")
 
 
 def _build_system_prompt() -> str:
@@ -46,7 +50,18 @@ def get_ai_response(db: Session, user: User, message: str) -> ChatResponse:
     llm = get_llm_client()
     if llm is not None:
         client, model = llm
-        return _chat_with_llm(db, user, message, client, model)
+        try:
+            return _chat_with_llm(db, user, message, client, model)
+        except APIError:
+            logger.exception("Falha ao chamar o provedor de IA configurado")
+            return ChatResponse(
+                reply=(
+                    "Não consegui falar com o provedor de IA agora (demorou demais "
+                    "para responder ou está indisponível). Tente novamente em "
+                    "instantes."
+                ),
+                tools_used=[],
+            )
     return _chat_with_mock_engine(db, user, message)
 
 

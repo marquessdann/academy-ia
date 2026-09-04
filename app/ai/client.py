@@ -6,14 +6,22 @@ from app.config import settings
 # reaproveitar o mesmo client/SDK apenas trocando a base_url e a chave.
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
+# Sem um timeout explícito, uma chamada travada ao provedor de IA prende a
+# requisição indefinidamente até o proxy do host derrubar a conexão sem
+# nenhum log ou erro claro. Falhar rápido aqui torna o problema visível.
+REQUEST_TIMEOUT_SECONDS = 20.0
+
 
 def get_llm_client() -> tuple[OpenAI, str] | None:
     """Retorna (client, nome_do_modelo) para o provedor de IA configurado,
     ou None se nenhuma chave de API estiver disponível (cai no modo mock)."""
     if settings.ai_provider == "openai" and settings.openai_api_key:
-        return OpenAI(api_key=settings.openai_api_key), settings.openai_model
+        return OpenAI(api_key=settings.openai_api_key, timeout=REQUEST_TIMEOUT_SECONDS), settings.openai_model
 
     if settings.ai_provider == "gemini" and settings.gemini_api_key:
-        return OpenAI(api_key=settings.gemini_api_key, base_url=GEMINI_BASE_URL), settings.gemini_model
+        return (
+            OpenAI(api_key=settings.gemini_api_key, base_url=GEMINI_BASE_URL, timeout=REQUEST_TIMEOUT_SECONDS),
+            settings.gemini_model,
+        )
 
     return None
