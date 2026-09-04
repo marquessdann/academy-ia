@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +8,8 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import Base, engine
 from app.routes import ai, analytics, auth, bookings, categories, classes, instructors, schedules, users
+
+logger = logging.getLogger("gymflow")
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,6 +36,15 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request, exc: Exception):
+    # Sem este handler, uma exceção não tratada vira uma resposta 500 gerada
+    # fora do CORSMiddleware (sem cabeçalhos de CORS), o que o navegador
+    # bloqueia e reporta como falha de rede — escondendo o erro real.
+    logger.exception("Erro não tratado em %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Erro interno do servidor"})
 
 
 app.include_router(auth.router)
