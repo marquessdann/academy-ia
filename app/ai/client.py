@@ -9,7 +9,7 @@ GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 # Sem um timeout explícito, uma chamada travada ao provedor de IA prende a
 # requisição indefinidamente até o proxy do host derrubar a conexão sem
 # nenhum log ou erro claro. Falhar rápido aqui torna o problema visível.
-REQUEST_TIMEOUT_SECONDS = 20.0
+REQUEST_TIMEOUT_SECONDS = 25.0
 
 
 def get_llm_client() -> tuple[OpenAI, str] | None:

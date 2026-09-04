@@ -23,12 +23,14 @@ logger = logging.getLogger("gymflow")
 def _build_system_prompt() -> str:
     today = datetime.now()
     return (
-        "Você é o assistente virtual da academia GymFlow. Responda sempre em "
-        "português, de forma curta, natural e objetiva — pode conversar "
-        "livremente, mas qualquer informação sobre aulas, vagas, professores, "
-        "horários ou reservas DEVE vir das funções (tools) disponíveis, nunca "
-        "inventada. Se a pergunta não tiver dados suficientes nem com as "
-        "tools, diga isso claramente ao usuário. "
+        "Você é o assistente virtual da academia GymFlow. Se a pergunta for "
+        "sobre aulas, vagas, professores, horários ou reservas, chame a(s) "
+        "função(ões) (tools) disponíveis com os parâmetros corretos — o "
+        "resultado é formatado e devolvido diretamente ao usuário, você não "
+        "precisa escrever uma resposta em texto nesses casos. Nunca invente "
+        "esse tipo de dado sem usar uma tool. Para conversas que não "
+        "dependem de dados do sistema (cumprimentos, dúvidas gerais), "
+        "responda direto, em português, de forma curta e natural. "
         f"Hoje é {today.strftime('%A, %d/%m/%Y')} (use isso para interpretar "
         "'hoje', 'amanhã', 'essa semana' etc. antes de chamar as tools)."
     )
@@ -66,45 +68,50 @@ def get_ai_response(db: Session, user: User, message: str) -> ChatResponse:
 
 
 def _chat_with_llm(db: Session, user: User, message: str, client, model: str) -> ChatResponse:
+    """Faz uma única chamada ao modelo: ele interpreta a pergunta livre e decide
+    qual(is) tool(s) chamar e com quais parâmetros. A resposta final é montada
+    por código (não numa segunda chamada ao modelo) para manter a latência
+    baixa — importante em hospedagens gratuitas, onde cada chamada ao
+    provedor de IA já é lenta o suficiente."""
     messages = [
         {"role": "system", "content": _build_system_prompt()},
         {"role": "user", "content": message},
     ]
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        tools=TOOL_SCHEMAS,
+        tool_choice="auto",
+    )
+    choice = response.choices[0].message
+
+    if not choice.tool_calls:
+        return ChatResponse(reply=choice.content or "Não consegui gerar uma resposta.", tools_used=[])
+
     tools_used: list[str] = []
+    reply_parts: list[str] = []
+    for tool_call in choice.tool_calls:
+        name = tool_call.function.name
+        args = json.loads(tool_call.function.arguments or "{}")
+        result = _execute_tool(db, user, name, args)
+        tools_used.append(name)
+        reply_parts.append(_format_tool_result(name, result))
 
-    for _ in range(4):
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=TOOL_SCHEMAS,
-            tool_choice="auto",
-        )
-        choice = response.choices[0].message
+    reply = "\n\n".join(reply_parts) if reply_parts else "Não encontrei informações para essa pergunta."
+    return ChatResponse(reply=reply, tools_used=tools_used)
 
-        if not choice.tool_calls:
-            return ChatResponse(reply=choice.content or "Não consegui gerar uma resposta.", tools_used=tools_used)
 
-        messages.append(
-            {
-                "role": "assistant",
-                "content": choice.content or "",
-                "tool_calls": [tc.model_dump() for tc in choice.tool_calls],
-            }
-        )
-        for tool_call in choice.tool_calls:
-            name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments or "{}")
-            result = _execute_tool(db, user, name, args)
-            tools_used.append(name)
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(result, default=str, ensure_ascii=False),
-                }
-            )
-
-    return ChatResponse(reply="Não consegui concluir a consulta no momento, tente novamente.", tools_used=tools_used)
+def _format_tool_result(name: str, result) -> str:
+    formatters = {
+        "get_available_classes": _format_available_classes,
+        "get_classes_by_period": _format_classes,
+        "get_user_bookings": lambda r: _format_bookings(r, history=False),
+        "get_class_occupancy": _format_occupancy,
+        "get_quietest_times": _format_quiet_slots,
+    }
+    formatter = formatters.get(name)
+    return formatter(result) if formatter else json.dumps(result, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
@@ -240,6 +247,16 @@ def _format_bookings(bookings: list[dict], history: bool) -> str:
         for b in bookings[:10]
     ]
     return header + "\n" + "\n".join(lines)
+
+
+def _format_occupancy(occupancy: dict | None) -> str:
+    if not occupancy:
+        return "Não encontrei essa aula."
+    return (
+        f"{occupancy['title']} em {occupancy['start_time'][:16].replace('T', ' ')}: "
+        f"{occupancy['booked_count']}/{occupancy['capacity']} vagas ocupadas "
+        f"({occupancy['available_spots']} disponível(is))."
+    )
 
 
 def _format_quiet_slots(slots: list[dict]) -> str:
