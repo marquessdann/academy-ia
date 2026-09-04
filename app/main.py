@@ -9,6 +9,11 @@ from app.routes import ai, analytics, auth, bookings, categories, classes, instr
 
 Base.metadata.create_all(bind=engine)
 
+if settings.auto_seed_demo_data:
+    from app.seed import seed
+
+    seed()
+
 app = FastAPI(
     title="GymFlow AI",
     description="API de gerenciamento e agendamento de aulas para academias, com assistente de IA integrado.",

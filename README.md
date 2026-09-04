@@ -294,7 +294,7 @@ python -m http.server 5500
 ```
 
 Acesse `http://127.0.0.1:5500`. Se a API estiver em outro host/porta, ajuste
-`window.GYMFLOW_API_URL` no início de `frontend/js/api.js`.
+`window.GYMFLOW_API_URL` em `frontend/js/config.js`.
 
 ### 7. Rodar os testes
 
@@ -303,6 +303,38 @@ pytest
 ```
 
 Os testes usam SQLite em memória, então não dependem de nenhum banco externo.
+
+---
+
+## 🌐 Como colocar no ar (deploy gratuito)
+
+O projeto pode ser hospedado gratuitamente no [Render](https://render.com),
+em duas partes: a API (Web Service) e o frontend (Static Site).
+
+1. Crie uma conta no Render e conecte sua conta do GitHub.
+2. **Backend**: "New +" → "Web Service" → selecione este repositório →
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - Em "Environment", adicione as variáveis: `SECRET_KEY` (qualquer string
+     aleatória), `AI_PROVIDER=mock` e `CORS_ORIGINS=*` (pode restringir
+     depois à URL do frontend). Sem configurar `DATABASE_URL`, a API usa
+     SQLite automaticamente — funciona, mas os dados são perdidos a cada
+     novo deploy; para persistir, crie um banco Postgres gratuito no Render
+     e defina `DATABASE_URL` com a "Internal Connection String" dele.
+   - A API já popula o banco com dados de demonstração sozinha na primeira
+     vez que sobe (`AUTO_SEED_DEMO_DATA=true` por padrão).
+3. **Frontend**: "New +" → "Static Site" → mesmo repositório → publish
+   directory: `frontend` (sem build command).
+4. Copie a URL pública do backend (algo como
+   `https://gymflow-api.onrender.com`) e cole em
+   `frontend/js/config.js`:
+   ```js
+   window.GYMFLOW_API_URL = "https://gymflow-api.onrender.com";
+   ```
+   Faça commit e push — o Render reimplanta o frontend automaticamente.
+
+Pronto: qualquer pessoa acessa a URL pública do frontend e usa o sistema
+completo, sem precisar instalar nada.
 
 ---
 

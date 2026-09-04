@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:5500,http://127.0.0.1:5500"
 
+    # Popula o banco com dados de demonstração automaticamente ao iniciar,
+    # caso ele ainda esteja vazio (útil ao hospedar a API pela primeira vez).
+    auto_seed_demo_data: bool = True
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
