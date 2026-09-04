@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.models.booking import BookingStatus
 from app.models.category import Category
+from app.models.instructor import Instructor
 from app.repositories.class_repository import count_active_bookings, list_classes
 from app.services.analytics_service import get_quietest_slots
 from app.repositories.booking_repository import list_by_user
@@ -50,9 +51,27 @@ def _resolve_category_id(db: Session, category_name: str | None) -> int | None:
     return category.id if category else None
 
 
-def get_available_classes(db: Session, category: str | None = None, date: str | None = None, period: str | None = None) -> list[dict]:
-    """Lista aulas futuras com vagas disponíveis, filtrando por modalidade, data e período do dia."""
+def _resolve_instructor_id(db: Session, instructor_name: str | None) -> int | None:
+    if not instructor_name:
+        return None
+    instructor = (
+        db.query(Instructor)
+        .filter(Instructor.name.ilike(f"%{instructor_name}%"))
+        .first()
+    )
+    return instructor.id if instructor else None
+
+
+def get_available_classes(
+    db: Session,
+    category: str | None = None,
+    instructor: str | None = None,
+    date: str | None = None,
+    period: str | None = None,
+) -> list[dict]:
+    """Lista aulas futuras com vagas disponíveis, filtrando por modalidade, professor, data e período do dia."""
     category_id = _resolve_category_id(db, category)
+    instructor_id = _resolve_instructor_id(db, instructor)
     day = _resolve_day(date)
     start = day
     end = day + timedelta(days=1)
@@ -63,6 +82,8 @@ def get_available_classes(db: Session, category: str | None = None, date: str | 
         end = day.replace(hour=hour_end)
 
     classes = list_classes(db, category_id=category_id, start_after=max(start, _now()), start_before=end)
+    if instructor_id is not None:
+        classes = [c for c in classes if c.instructor_id == instructor_id]
 
     result = []
     for gym_class in classes:
@@ -83,9 +104,16 @@ def get_available_classes(db: Session, category: str | None = None, date: str | 
     return result
 
 
-def get_classes_by_period(db: Session, category: str | None = None, date: str | None = None, period: str | None = None) -> list[dict]:
-    """Lista todas as aulas (com ou sem vaga) de uma modalidade em uma data/período."""
+def get_classes_by_period(
+    db: Session,
+    category: str | None = None,
+    instructor: str | None = None,
+    date: str | None = None,
+    period: str | None = None,
+) -> list[dict]:
+    """Lista todas as aulas (com ou sem vaga) de uma modalidade/professor em uma data/período."""
     category_id = _resolve_category_id(db, category)
+    instructor_id = _resolve_instructor_id(db, instructor)
     day = _resolve_day(date)
     start = day
     end = day + timedelta(days=7 if date is None and period is None else 1)
@@ -96,6 +124,9 @@ def get_classes_by_period(db: Session, category: str | None = None, date: str | 
         end = day.replace(hour=hour_end)
 
     classes = list_classes(db, category_id=category_id, start_after=start, start_before=end)
+    if instructor_id is not None:
+        classes = [c for c in classes if c.instructor_id == instructor_id]
+
     return [
         {
             "class_id": c.id,
@@ -168,11 +199,12 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_available_classes",
-            "description": "Lista aulas futuras que ainda têm vagas disponíveis, podendo filtrar por modalidade, data e período do dia.",
+            "description": "Lista aulas futuras que ainda têm vagas disponíveis, podendo filtrar por modalidade, professor, data e período do dia.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "category": {"type": "string", "description": "Nome da modalidade, ex: funcional, yoga, spinning, musculação"},
+                    "instructor": {"type": "string", "description": "Nome (ou parte do nome) do professor, ex: Carla, Bruno Lima"},
                     "date": {"type": "string", "description": "'today', 'tomorrow' ou data ISO (YYYY-MM-DD)"},
                     "period": {"type": "string", "enum": ["morning", "afternoon", "evening"], "description": "Período do dia"},
                 },
@@ -183,11 +215,12 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_classes_by_period",
-            "description": "Lista todas as aulas (com ou sem vaga) de uma modalidade em uma data/período, útil para perguntas como 'quais aulas de funcional existem esta semana'.",
+            "description": "Lista todas as aulas (com ou sem vaga) de uma modalidade/professor em uma data/período, útil para perguntas como 'quais aulas de funcional existem esta semana' ou 'que horas a Carla dá aula hoje'.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "category": {"type": "string"},
+                    "instructor": {"type": "string", "description": "Nome (ou parte do nome) do professor"},
                     "date": {"type": "string"},
                     "period": {"type": "string", "enum": ["morning", "afternoon", "evening"]},
                 },

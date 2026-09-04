@@ -17,9 +17,11 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     # IA
-    ai_provider: str = "mock"  # "openai" ou "mock"
+    ai_provider: str = "mock"  # "openai", "gemini" ou "mock"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
     # CORS
     cors_origins: str = "http://localhost:5500,http://127.0.0.1:5500"

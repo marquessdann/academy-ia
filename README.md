@@ -78,27 +78,37 @@ O fluxo em [`app/ai/chat_service.py`](app/ai/chat_service.py) funciona assim:
    funcional têm vaga amanhã à noite?"*).
 2. O `system_prompt` instrui o modelo a **usar apenas as tools disponíveis**
    e nunca inventar aulas, vagas ou horários.
-3. O modelo decide qual(is) função(ões) chamar e com quais parâmetros
-   (via [function calling da OpenAI](https://platform.openai.com/docs/guides/function-calling)).
+3. O modelo decide qual(is) função(ões) chamar e com quais parâmetros (via
+   [function calling](https://platform.openai.com/docs/guides/function-calling),
+   no padrão da OpenAI).
 4. O backend executa a função real contra o PostgreSQL e devolve o resultado
    ao modelo.
 5. O modelo formata uma resposta final em português, baseada exclusivamente
-   nesse resultado.
+   nesse resultado — incluindo interpretar "hoje"/"amanhã" e resolver o
+   nome de um professor citado na pergunta.
 
 Isso é configurado por `AI_PROVIDER` no `.env`:
 
-- `AI_PROVIDER=openai` → usa a API da OpenAI (function calling real) com a
-  chave definida em `OPENAI_API_KEY`. O mesmo padrão de tools funciona com
-  qualquer provedor compatível (Claude, Gemini) trocando o cliente em
-  `app/ai/client.py`.
+- `AI_PROVIDER=openai` → usa a API da OpenAI com a chave em
+  `OPENAI_API_KEY` (padrão do modelo: `OPENAI_MODEL=gpt-4o-mini`).
+- `AI_PROVIDER=gemini` → usa a API do Google Gemini com a chave em
+  `GEMINI_API_KEY` (padrão do modelo: `GEMINI_MODEL=gemini-2.0-flash`),
+  que tem um nível gratuito generoso para testes. O Gemini expõe um
+  endpoint compatível com a API da OpenAI, então `app/ai/client.py`
+  reaproveita o mesmo SDK só trocando a `base_url` e a chave — o resto do
+  fluxo (tools, prompt, loop de function calling) é idêntico.
 - `AI_PROVIDER=mock` (padrão) → um mecanismo local de reconhecimento de
   intenção por palavras-chave decide qual tool chamar, sem precisar de chave
-  de API. Isso permite rodar e testar o projeto (inclusive em uma avaliação
-  técnica) **sem custo e sem depender de internet**, chamando as mesmas
-  funções reais do banco de dados.
+  de API. Cobre os padrões de pergunta mais comuns (vagas, horários por
+  professor/modalidade, minhas reservas, horário mais vazio), mas — por não
+  usar um LLM de verdade — não entende frases fora desses padrões. É útil
+  para rodar e testar o projeto **sem custo e sem depender de internet**.
 
-Em ambos os casos, a IA nunca executa SQL livre — ela só pode chamar as
-funções expostas em `TOOL_REGISTRY`, o que evita respostas inventadas e
+Com `openai` ou `gemini`, a conversa é realmente livre: o modelo interpreta
+a frase em linguagem natural (ex.: *"que horas eu tenho aula hoje?"* ou
+*"qual o horário da Carla amanhã?"*) e decide sozinho como consultar os
+dados. Em todos os casos, a IA nunca executa SQL livre — ela só pode chamar
+as funções expostas em `TOOL_REGISTRY`, o que evita respostas inventadas e
 mantém o escopo do assistente controlado.
 
 ---
@@ -135,7 +145,7 @@ o melhor horário para eu treinar?"*.
 | Migrations      | Alembic                                                  |
 | Validação       | Pydantic v2                                              |
 | Autenticação    | JWT (python-jose) + hash de senha com bcrypt (passlib)   |
-| IA              | OpenAI API (function calling), com modo mock local       |
+| IA              | OpenAI API ou Google Gemini (function calling), com modo mock local |
 | Testes          | Pytest + SQLite em memória                                |
 | Frontend        | HTML, CSS e JavaScript puro (SPA leve, sem framework)     |
 | Documentação API| Swagger / OpenAPI (gerado automaticamente pelo FastAPI)  |
@@ -174,8 +184,8 @@ app/
 │
 └── ai/                  # assistente de IA
     ├── tools.py           # funções que consultam dados reais (function calling)
-    ├── client.py           # cliente da OpenAI
-    └── chat_service.py      # orquestra o chat (modo OpenAI real ou mock)
+    ├── client.py           # cliente OpenAI/Gemini (mesma API, base_url diferente)
+    └── chat_service.py      # orquestra o chat (OpenAI, Gemini ou mock)
 ```
 
 A ideia é manter uma separação simples e direta, sem camadas
@@ -236,10 +246,12 @@ SECRET_KEY=troque-esta-chave-por-uma-string-aleatoria-e-secreta
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-# Integração com IA ("openai" ou "mock", que funciona sem chave de API)
+# Integração com IA: "openai", "gemini" ou "mock" (funciona sem chave de API)
 AI_PROVIDER=mock
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash
 
 # CORS (URLs do frontend separadas por vírgula)
 CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
@@ -446,8 +458,9 @@ pytest -v
       procuradas por modalidade/professor).
 - [ ] Migrar o frontend para React, caso o projeto cresça em complexidade de
       estado.
-- [ ] Suporte a múltiplos provedores de IA configuráveis (OpenAI, Gemini,
-      Claude) via variável de ambiente, com o mesmo contrato de tools.
+- [ ] Suporte a mais provedores de IA (ex.: Claude) via variável de
+      ambiente, seguindo o mesmo contrato de tools já usado por
+      OpenAI/Gemini.
 - [ ] Rate limiting no endpoint `/ai/chat` para controle de custo.
 
 ---
