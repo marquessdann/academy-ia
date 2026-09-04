@@ -224,13 +224,28 @@ pip install -r requirements.txt
 
 ### 2. Configurar variáveis de ambiente
 
-```bash
-cp .env.example .env
+Crie um arquivo `.env` na raiz do projeto (ele é ignorado pelo Git) com as
+variáveis abaixo, ajustando os valores para o seu ambiente:
+
+```
+# Banco de dados
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gymflow
+
+# JWT
+SECRET_KEY=troque-esta-chave-por-uma-string-aleatoria-e-secreta
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# Integração com IA ("openai" ou "mock", que funciona sem chave de API)
+AI_PROVIDER=mock
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+
+# CORS (URLs do frontend separadas por vírgula)
+CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 ```
 
-Edite o `.env` com sua string de conexão do PostgreSQL/Supabase e uma
-`SECRET_KEY` própria. Para testar rapidamente sem instalar Postgres, basta
-usar:
+Para testar rapidamente sem instalar Postgres, basta usar:
 
 ```
 DATABASE_URL=sqlite:///./gymflow.db
@@ -347,8 +362,9 @@ curl -X POST http://127.0.0.1:8000/ai/chat \
   `get_current_admin`, que bloqueia usuários comuns com `403 Forbidden`.
 - Segredos (chave JWT, chave de API de IA, string de conexão do banco) ficam
   **apenas** em variáveis de ambiente (`.env`, listado no `.gitignore`) —
-  nunca no código-fonte. `.env.example` documenta as variáveis necessárias
-  sem expor valores reais.
+  nunca no código-fonte. As variáveis necessárias estão documentadas na
+  seção [Como executar localmente](#-como-executar-localmente), sem expor
+  valores reais.
 - Validação de entrada em todos os endpoints via Pydantic (schemas
   dedicados, com validações como "hora de término deve ser depois da hora de
   início").
