@@ -4,4 +4,4 @@
 //
 // Depois de hospedar o backend, troque a linha abaixo pela URL real, ex:
 // window.GYMFLOW_API_URL = "https://gymflow-api.onrender.com";
-window.GYMFLOW_API_URL = "";
+window.GYMFLOW_API_URL = "https://gymflow-api-iclt.onrender.com";
