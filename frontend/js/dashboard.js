@@ -232,6 +232,37 @@ document.querySelectorAll(".chip").forEach((chip) => {
 
 appendMessage("assistant", `Olá, ${user?.name?.split(" ")[0] || "aluno"}! 👋 Sou o assistente da GymFlow. Pergunte sobre vagas, horários ou suas reservas.`);
 
+// ---------- Notificações das aulas de hoje ----------
+const BOOKING_STATUS_ICON = { confirmed: "✅", cancelled: "❌" };
+const BOOKING_STATUS_LABEL = { confirmed: "Confirmada", cancelled: "Cancelada" };
+
+async function notifyTodayClasses() {
+  try {
+    const bookings = await Api.myBookings();
+    const todayKey = new Date().toDateString();
+    const todayBookings = bookings
+      .filter((b) => new Date(b.gym_class.start_time).toDateString() === todayKey)
+      .sort((a, b) => new Date(a.gym_class.start_time) - new Date(b.gym_class.start_time));
+
+    todayBookings.forEach((booking, index) => {
+      const time = new Date(booking.gym_class.start_time).toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const icon = BOOKING_STATUS_ICON[booking.status] || "ℹ️";
+      const label = BOOKING_STATUS_LABEL[booking.status] || booking.status;
+      const toastType = booking.status === "cancelled" ? "error" : "success";
+      // Pequeno atraso entre cada toast pra não empilhar tudo de uma vez.
+      setTimeout(() => {
+        showToast(`${icon} Hoje às ${time} — ${booking.gym_class.title} (${label})`, toastType);
+      }, index * 600);
+    });
+  } catch (error) {
+    // Notificação é só um "plus", não deve travar o carregamento do dashboard.
+  }
+}
+
 // ---------- Inicialização ----------
 loadCategories();
 loadClasses();
+notifyTodayClasses();
